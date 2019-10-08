@@ -47,7 +47,7 @@ def randomize(curve, rand = True, factor = 1):
 
 
 def test_wrong_fit(img):
-    noise_factor = 1/5
+    noise_factor = 1
 
     ground_img = birdsEye.undistort(img)
     binary = laneFilter.apply(ground_img)
@@ -65,8 +65,8 @@ def test_wrong_fit(img):
     result = curves.fit(wb)
 
     print(result['pixel_right_best_fit_curve'])
-    randomize(result['pixel_left_best_fit_curve'], False)
-    randomize(result['pixel_right_best_fit_curve'], False)
+    randomize(result['pixel_left_best_fit_curve'], False, noise_factor)
+    randomize(result['pixel_right_best_fit_curve'], False, noise_factor)
 
 
     ground_img_with_projection = birdsEye.project(ground_img, binary,
@@ -82,4 +82,4 @@ def test_wrong_fit(img):
     return left_result and right_result and shape_result
 
 
-print(test_wrong_fit(cv2.imread('test_images/test1.jpg')))
+print(test_wrong_fit(cv2.imread('test_images/test3.jpg')))
