@@ -29,8 +29,8 @@ def convolve(left, fit, img):
     print('resizing image...')
     img = resize(img, scale_factor)
 
-    plt.imshow(img)
-    plt.show()
+    # plt.imshow(img)
+    # plt.show()
 
     print('creating filter...')
     filter_fit = np.copy(fit)
@@ -55,8 +55,8 @@ def convolve(left, fit, img):
     blur = np.full([4, 4], 1 / 16)
     filter = signal.convolve2d(filter, blur)
 
-    plt.imshow(filter)
-    plt.show()
+    # plt.imshow(filter)
+    # plt.show()
 
     print('boundary is at: ',int(img.shape[1]/2))
 
@@ -65,20 +65,18 @@ def convolve(left, fit, img):
         img = img[:, :half_width]
     else:
         img = img[:, half_width + 1:]
+    #
+    # plt.imshow(img)
+    # plt.show()
 
-    plt.imshow(img)
-    plt.show()
 
-    print(img.shape)
-    print(filter.shape)
     grad = signal.convolve2d(img, filter, 'same')
-    plt.imshow(grad, cmap = 'gray')
-    plt.show()
+    # plt.imshow(grad, cmap = 'gray')
+    # plt.show()
 
 
     result = np.where(grad == np.amax(grad))
-    print(grad)
-    print('result is: ', result)
+    # print('result is: ', result)
     result_img = np.zeros((img.shape[0], img.shape[1]))
     for i in range(5):
         for j in range(5):
@@ -97,8 +95,8 @@ def convolve(left, fit, img):
     print('expected: ', expected_x)
     print('actual: ', actual_x)
 
-    plt.imshow(result_img)
-    plt.show()
+    # plt.imshow(result_img)
+    # plt.show()
 
     if abs(actual_x - expected_x) < 25 and grad[result[0][0]][result[1][0]] > 7500:
         return True

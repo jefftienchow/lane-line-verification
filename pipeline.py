@@ -74,8 +74,8 @@ def test_wrong_fit(img):
                                                   result['pixel_right_best_fit_curve'])
 
     shape_result = shape(result['pixel_left_best_fit_curve'], result['pixel_right_best_fit_curve'], img)
-    plt.imshow(ground_img_with_projection)
-    plt.show()
+    # plt.imshow(ground_img_with_projection)
+    # plt.show()
 
     left_result = convolve(True, result['pixel_left_best_fit_curve'], wb)
     right_result = convolve(False, result['pixel_right_best_fit_curve'], wb)
