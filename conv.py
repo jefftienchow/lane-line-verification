@@ -12,12 +12,15 @@ from scipy import signal
 import random
 import math
 
+
 scale_factor = 1 / 4
+# np.set_printoptions(threshold=sys.maxsize)
+
 
 
 def get_dotted_filter(fit, funct):
     dot_len = 30 * scale_factor
-    space_len = 50 * scale_factor
+    space_len = 60 * scale_factor
     print('fit is', fit)
     degree = math.atan(fit[1])
     print('degree is: ', degree)
@@ -55,8 +58,10 @@ def get_dotted_filter(fit, funct):
         filter[(space_y[i] + 5).astype(int), (spacex[i] - min_x + 5).astype(int)] = cur_val
         cur_val -= loss
     # print(filter)
-    plt.imshow(filter)
-    plt.show()
+    blur = np.full([4, 4], 1 / 16)
+    filter = signal.convolve2d(filter, blur)
+    # plt.imshow(filter)
+    # plt.show()
     return filter
 
 def resize(img, scale_factor):
@@ -112,18 +117,19 @@ def convolve(left, fit, img):
     else:
         img = img[:, half_width + 1:]
     #
-    plt.imshow(img)
-    plt.show()
+    # plt.imshow(img)
+    # plt.show()
 
     dotted = get_dotted_filter(filter_fit, filter_p)
     grad = signal.convolve2d(img, filter, 'same')
 
     grad2 = signal.convolve2d(img, dotted, 'same')
 
-    plt.imshow(grad2, cmap = 'gray')
-    plt.show()
+    # plt.imshow(grad2, cmap = 'gray')
+    # plt.show()
 
     dotted_result = np.where(grad2 == np.amax(grad2))
+    print(grad2)
     print('max val for dotted is: ', grad2[dotted_result[0][0]][dotted_result[1][0]])
 
     result = np.where(grad == np.amax(grad))
@@ -133,6 +139,9 @@ def convolve(left, fit, img):
         for j in range(5):
             result_img[i+result[0][0]][j+result[1][0]] = 255
     print('max val is: ', grad[result[0][0]][result[1][0]])
+    print('location of max for solid is: ', result)
+    print('location of max for dotted is: ', dotted_result)
+
     p = np.poly1d(fit)
 
     if left:
@@ -150,16 +159,17 @@ def convolve(left, fit, img):
 
 
     print('expected: ', expected_x)
+    print('expected_2:', expected_2x)
     print('actual: ', actual_x)
     print('actual2: ', actual_2x)
 
-    # plt.imshow(result_img)
+    # plt.imshow(img)
     # plt.show()
 
     if abs(actual_x - expected_x) < 25 and grad[result[0][0]][result[1][0]] > 15000:
         print('its solid')
         return True
-    elif abs(actual_2x - expected_2x) < 25 and grad2[dotted_result[0][0]][dotted_result[1][0]] > 1200:
+    elif abs(actual_2x - expected_2x) < 40 and grad2[dotted_result[0][0]][dotted_result[1][0]] > 1200:
         print('its dotted')
         return True
     return False

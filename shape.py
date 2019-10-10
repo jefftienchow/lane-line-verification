@@ -42,7 +42,7 @@ def shape(left_fit, right_fit, img):
     #plt.plot(x_coords, leftpoints)
     #plt.plot(x_coords, rightpoints)
     #plt.show()
-
-    if rmsdiff < 0.5:
+    print('rms is: ', rmsdiff)
+    if rmsdiff < 0.05:
         return True
     return False
