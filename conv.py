@@ -64,12 +64,12 @@ def get_dotted_filter(fit, funct):
     # plt.show()
     return filter
 
-def resize(img, scale_factor):
-    width = int(img.shape[1] * scale_factor)
-    height = int(img.shape[0] * scale_factor)
-    dim = (width, height)
-    # resize image
-    return cv2.resize(img, dim)
+# def resize(img, scale_factor):
+#     width = int(img.shape[1] * scale_factor)
+#     height = int(img.shape[0] * scale_factor)
+#     dim = (width, height)
+#     # resize image
+#     return cv2.resize(img, dim)
 
 def convolve(left, fit, img):
     if left:
@@ -78,30 +78,36 @@ def convolve(left, fit, img):
         print('starting convolution on right')
 
     print('resizing image...')
-    img = resize(img, scale_factor)
+    img = cv2.resize(img, None, fx=scale_factor, fy=scale_factor)
 
     # plt.imshow(img)
     # plt.show()
 
     print('creating filter...')
+
+    # copies the fit and scales it
     filter_fit = np.copy(fit)
-    filter_fit[0] *= scale_factor
-    filter_fit[2] /= scale_factor
+    filter_fit[0] /= scale_factor
+    filter_fit[2] *= scale_factor
     h = img.shape[0]
     ypts = np.arange(0, h - 1)
 
+    # filter values are heavier towards the bottom of the filter
     filter_values = np.arange(100, 255, 155/(h-1))
 
     filter_p = np.poly1d(filter_fit)
 
     xpts = filter_p(ypts)
-    min_y = np.amin(xpts)
+
+    min_x = np.amin(xpts)
     w = int(np.amax(xpts) - np.amin(xpts))
 
-    filter = np.full((h + 10, w + 10), 0).astype(np.uint8)
+    padding = 10
+    filter = np.full((h + padding, w + padding), 0).astype(np.uint8)
 
     for i in range(len(filter_values)):
-        filter[(ypts[i] + 5).astype(int), (xpts[i] - min_y + 5).astype(int)] = filter_values[i]
+        # subtracts min_x to account for offset given by fit
+        filter[(ypts[i] + padding/2).astype(int), (xpts[i] - min_x + padding/2).astype(int)] = filter_values[i]
 
     blur = np.full([4, 4], 1 / 16)
     filter = signal.convolve2d(filter, blur)
@@ -121,55 +127,67 @@ def convolve(left, fit, img):
     # plt.show()
 
     dotted = get_dotted_filter(filter_fit, filter_p)
-    grad = signal.convolve2d(img, filter, 'same')
+    grad = signal.correlate2d(img, filter, 'same')
 
-    grad2 = signal.convolve2d(img, dotted, 'same')
+    grad2 = signal.correlate2d(img, dotted, 'same')
 
+    # plt.imshow(grad, cmap='gray')
+    # plt.show()
     # plt.imshow(grad2, cmap = 'gray')
     # plt.show()
 
-    dotted_result = np.where(grad2 == np.amax(grad2))
+    dotted_result = np.unravel_index(grad2.argmax(), grad2.shape)
+    # dotted_result = np.where(grad2 == np.amax(grad2))
     print(grad2)
-    print('max val for dotted is: ', grad2[dotted_result[0][0]][dotted_result[1][0]])
+    print('max val for dotted is: ', grad2[dotted_result[0]][dotted_result[1]])
 
-    result = np.where(grad == np.amax(grad))
+    result = np.unravel_index(grad.argmax(), grad.shape)
     # print('result is: ', result)
-    result_img = np.zeros((img.shape[0], img.shape[1]))
-    for i in range(5):
-        for j in range(5):
-            result_img[i+result[0][0]][j+result[1][0]] = 255
-    print('max val is: ', grad[result[0][0]][result[1][0]])
+    # result_img = np.zeros((img.shape[0], img.shape[1]))
+    # for i in range(5):
+    #     for j in range(5):
+    #         result_img[i+result[0][0]][j+result[1][0]] = 255
+    print('max val is: ', grad[result[0]][result[1]])
     print('location of max for solid is: ', result)
     print('location of max for dotted is: ', dotted_result)
 
     p = np.poly1d(fit)
 
+    offset = int(filter.shape[1] / 2) - (xpts[result[0]] - min_x + padding / 2)
+
     if left:
-        actual_x = result[1][0] * (1/scale_factor)
-        expected_2x = p(dotted_result[0][0] * (1/scale_factor))
-        actual_2x = dotted_result[1][0] * (1/scale_factor)
-        expected_x = p(result[0][0] * (1/scale_factor))
+        print('actual middle x is: ', result[1])
+        print("filter shape is: ", filter.shape)
+        print('xpts[result[0]] is: ', xpts[result[0]])
+
+        actual_x = (result[1] - offset) * (1/scale_factor)
+        expected_x = p(result[0] * (1/scale_factor))
+        actual_2x = dotted_result[1] * (1/scale_factor)
+        expected_2x = p(dotted_result[0] * (1/scale_factor))
+
     else:
-        actual_x = (result[1][0] + half_width)* (1/scale_factor)
-        expected_2x = p(dotted_result[0][0] * (1/scale_factor))
-        actual_2x = (dotted_result[1][0] + half_width) * (1/scale_factor)
-        expected_x = p(result[0][0] * (1/scale_factor))
+        actual_x = (result[1] + half_width - offset)* (1/scale_factor)
+        expected_x = p(result[0] * (1/scale_factor))
+
+        actual_2x = (dotted_result[1] + half_width) * (1/scale_factor)
+        expected_2x = p(dotted_result[0] * (1/scale_factor))
 
 
 
 
     print('expected: ', expected_x)
     print('expected_2:', expected_2x)
+    print('expected scaled: ', filter_p(result[0]))
     print('actual: ', actual_x)
     print('actual2: ', actual_2x)
 
     # plt.imshow(img)
     # plt.show()
 
-    if abs(actual_x - expected_x) < 25 and grad[result[0][0]][result[1][0]] > 15000:
+    if abs(actual_x - expected_x) < 25 and grad[result[0]][result[1]] > 13000:
         print('its solid')
         return True
-    elif abs(actual_2x - expected_2x) < 40 and grad2[dotted_result[0][0]][dotted_result[1][0]] > 1200:
+    elif abs(actual_2x - expected_2x) < 40 and grad2[dotted_result[0]][dotted_result[1]] > 1200:
         print('its dotted')
         return True
     return False

@@ -80,7 +80,10 @@ class Curves:
     right_xs = kr[0] * (ys**2) + kr[1] * ys + kr[2]
     
     xls, xrs, ys = left_xs.astype(np.uint32), right_xs.astype(np.uint32), ys.astype(np.uint32)
-    
+
+    # print("xls are" ,xls)
+    # print("xrs", xrs)
+    # print("ys", ys)
     for xl, xr, y in zip(xls, xrs, ys):
       cv2.line(self.out_img, (xl - t, y), (xl + t, y), (255, 255, 0), int(t / 2))
       cv2.line(self.out_img, (xr - t, y), (xr + t, y), (0, 0, 255), int(t / 2))
