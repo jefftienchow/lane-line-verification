@@ -22,8 +22,7 @@ def getRMSDiff(leftpoints, rightpoints):
         rmsdiff += (x - y) ** 2
     return math.sqrt(rmsdiff / min(len(leftpoints), len(rightpoints)))
 
-def shape(left_fit, right_fit, img):
-    h = img.shape[0]
+def shape(left_fit, right_fit, h):
 
     kl, kr = left_fit, right_fit
     ys = np.linspace(0, h - 1, h)

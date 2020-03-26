@@ -19,9 +19,9 @@ scale_factor = 1 / 4
 
 
 def get_dotted_filter(fit, funct):
-    dot_len = 30 * scale_factor
-    space_len = 60 * scale_factor
-    print('fit is', fit)
+    dot_len = 30 #* scale_factor
+    space_len = 60 #* scale_factor
+    # print('fit is', fit)
     degree = math.atan(fit[1])
     print('degree is: ', degree)
     dot_range = int(math.cos(degree) * dot_len)
@@ -60,7 +60,7 @@ def get_dotted_filter(fit, funct):
     # print(filter)
     blur = np.full([4, 4], 1 / 16)
     filter = signal.convolve2d(filter, blur)
-    # plt.imshow(filter)
+    plt.imshow(filter)
     # plt.show()
     return filter
 
@@ -77,8 +77,8 @@ def convolve(left, fit, img):
     else:
         print('starting convolution on right')
 
-    print('resizing image...')
-    img = cv2.resize(img, None, fx=scale_factor, fy=scale_factor)
+    # print('resizing image...')
+    # img = cv2.resize(img, None, fx=scale_factor, fy=scale_factor)
 
     # plt.imshow(img)
     # plt.show()
@@ -87,8 +87,8 @@ def convolve(left, fit, img):
 
     # copies the fit and scales it
     filter_fit = np.copy(fit)
-    filter_fit[0] /= scale_factor
-    filter_fit[2] *= scale_factor
+    # filter_fit[0] /= scale_factor
+    # filter_fit[2] *= scale_factor
     h = img.shape[0]
     ypts = np.arange(0, h - 1)
 
@@ -112,7 +112,7 @@ def convolve(left, fit, img):
     blur = np.full([4, 4], 1 / 16)
     filter = signal.convolve2d(filter, blur)
 
-    # plt.imshow(filter)
+    plt.imshow(filter)
     # plt.show()
 
     print('boundary is at: ',int(img.shape[1]/2))
@@ -131,9 +131,9 @@ def convolve(left, fit, img):
 
     grad2 = signal.correlate2d(img, dotted, 'same')
 
-    # plt.imshow(grad, cmap='gray')
+    plt.imshow(grad, cmap='gray')
     # plt.show()
-    # plt.imshow(grad2, cmap = 'gray')
+    plt.imshow(grad2, cmap = 'gray')
     # plt.show()
 
     dotted_result = np.unravel_index(grad2.argmax(), grad2.shape)
@@ -160,17 +160,17 @@ def convolve(left, fit, img):
         print("filter shape is: ", filter.shape)
         print('xpts[result[0]] is: ', xpts[result[0]])
 
-        actual_x = (result[1] - offset) * (1/scale_factor)
-        expected_x = p(result[0] * (1/scale_factor))
-        actual_2x = dotted_result[1] * (1/scale_factor)
-        expected_2x = p(dotted_result[0] * (1/scale_factor))
+        actual_x = (result[1] - offset) #* (1/scale_factor)
+        expected_x = p(result[0] )#* (1/scale_factor))
+        actual_2x = dotted_result[1] #* (1/scale_factor)
+        expected_2x = p(dotted_result[0])# * (1/scale_factor))
 
     else:
-        actual_x = (result[1] + half_width - offset)* (1/scale_factor)
-        expected_x = p(result[0] * (1/scale_factor))
+        actual_x = (result[1] + half_width - offset)#* (1/scale_factor)
+        expected_x = p(result[0] )#* (1/scale_factor))
 
-        actual_2x = (dotted_result[1] + half_width) * (1/scale_factor)
-        expected_2x = p(dotted_result[0] * (1/scale_factor))
+        actual_2x = (dotted_result[1] + half_width) #* (1/scale_factor)
+        expected_2x = p(dotted_result[0])# * (1/scale_factor))
 
 
 
@@ -184,10 +184,10 @@ def convolve(left, fit, img):
     # plt.imshow(img)
     # plt.show()
 
-    if abs(actual_x - expected_x) < 25 and grad[result[0]][result[1]] > 13000:
+    if abs(actual_x - expected_x) < 20 and grad[result[0]][result[1]] > 13000:
         print('its solid')
-        return True
-    elif abs(actual_2x - expected_2x) < 40 and grad2[dotted_result[0]][dotted_result[1]] > 1200:
+        return "solid"
+    elif abs(actual_2x - expected_2x) < 20 and grad2[dotted_result[0]][dotted_result[1]] > 900:
         print('its dotted')
-        return True
+        return "dotted"
     return False

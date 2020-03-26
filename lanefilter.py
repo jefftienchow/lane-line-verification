@@ -11,22 +11,7 @@ class LaneFilter:
     self.mag_thresh, self.x_thresh = p['mag_thresh'], p['x_thresh']
     self.hls, self.l, self.s, self.z  = None, None, None, None
     self.color_cond1, self.color_cond2 = None, None
-    self.sobel_cond1, self.sobel_cond2, self.sobel_cond3 = None, None, None 
-
-  def sobel_breakdown(self, img):
-    self.apply(img)
-    b1, b2, b3 = self.z.copy(), self.z.copy(), self.z.copy()
-    b1[(self.sobel_cond1)] = 255
-    b2[(self.sobel_cond2)] = 255
-    b3[(self.sobel_cond3)] = 255
-    return np.dstack((b1, b2,b3))
-
-  def color_breakdown(self, img):
-    self.apply(img)
-    b1, b2 = self.z.copy(), self.z.copy()
-    b1[(self.color_cond1)] = 255
-    b2[(self.color_cond2)] = 255
-    return np.dstack((b1, b2, self.z))
+    self.sobel_cond1, self.sobel_cond2, self.sobel_cond3 = None, None, None
 
   def apply(self, rgb_image):    
     self.hls = cv2.cvtColor(rgb_image, cv2.COLOR_RGB2HLS)
