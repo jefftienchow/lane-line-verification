@@ -123,8 +123,8 @@ def convolve(left, fit, img):
     else:
         img = img[:, half_width + 1:]
     #
-    # plt.imshow(img)
-    # plt.show()
+    plt.imshow(img)
+    plt.show()
 
     dotted = get_dotted_filter(filter_fit, filter_p)
     grad = signal.correlate2d(img, filter, 'same')
@@ -184,10 +184,10 @@ def convolve(left, fit, img):
     # plt.imshow(img)
     # plt.show()
 
-    if abs(actual_x - expected_x) < 20 and grad[result[0]][result[1]] > 13000:
+    if abs(actual_x - expected_x) < 20 and grad[result[0]][result[1]] > 10000:
         print('its solid')
         return "solid"
-    elif abs(actual_2x - expected_2x) < 20 and grad2[dotted_result[0]][dotted_result[1]] > 900:
+    elif abs(actual_2x - expected_2x) < 25 and grad2[dotted_result[0]][dotted_result[1]] > 900:
         print('its dotted')
         return "dotted"
     return False

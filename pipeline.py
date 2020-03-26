@@ -17,8 +17,9 @@ from evaluator import get_size
 
 # np.set_printoptions(threshold=sys.maxsize)
 SCALE_FACTOR = 1/5
-SOURCE_PTS = np.array([(580, 460), (205, 720), (1110, 720), (703, 460)], np.float32)
-DEST_PTS = np.array([(320, 0), (320, 720), (960, 720), (960, 0)], np.float32)
+X_CROP = 150
+SOURCE_PTS = [(580, 460), (205, 720), (1110, 720), (703, 460)]
+DEST_PTS = [(320, 0), (320, 720), (960, 720), (960, 0)]
 PAINTED_THRESHOLDS = {'sat_thresh': 160, 'light_thresh': 120, 'light_thresh_agr': 240,
              'grad_thresh': (0.7, 1.4), 'mag_thresh': 40, 'x_thresh': 20}
 REG_THRESHOLDS = { 'sat_thresh': 120, 'light_thresh': 40, 'light_thresh_agr': 205,
@@ -72,23 +73,37 @@ def get_lines(img, birds_eye, thresholds):
     :return: the coefficients of the detected left and right lane lines as 2nd degree polynomials
     """
     wb = get_wb(img, birds_eye, thresholds)
-    curves = Curves(number_of_windows=9, margin=100, minimum_pixels=50,
+    curves = Curves(number_of_windows=9, margin=100, minimum_pixels=10,
                     ym_per_pix=30 / 720, xm_per_pix=3.7 / 700)
     result = curves.fit(wb)
+    plt.imshow(result['image'])
+    plt.show()
+    visual = birds_eye.project(img, wb, result['pixel_left_best_fit_curve'], result['pixel_right_best_fit_curve'])
+    plt.imshow(visual)
+    plt.show()
+
     return (result['pixel_left_best_fit_curve'], result['pixel_right_best_fit_curve'])
 
 def resize(img, lines, source_pts, dest_pts, scale_factor):
     """
     resizes parameters to reduce the size of the certificate
     """
+    print(img.shape)
+    # half_height = img.shape[0]//2
+    # width = img.shape[1]
+    # img = img[half_height:, x_crop:width-x_crop]
     img = cv2.resize(img, (int(img.shape[1] * scale_factor), int(img.shape[0] * scale_factor)))
-
+    plt.imshow(img)
+    plt.show()
     for line in lines:
         line[0] /= scale_factor
-        line[2] *= scale_factor
-    source_pts = np.array([(pt[0] * scale_factor, pt[1] * scale_factor) for pt in source_pts], np.float32)
-    dest_pts = np.array([(pt[0] * scale_factor, pt[1] * scale_factor) for pt in dest_pts], np.float32)
-
+        line[2] = (line[2]) * scale_factor
+    source_pts = [(pt[0] * scale_factor, pt[1] * scale_factor) for pt in source_pts]
+    dest_pts = [(pt[0] * scale_factor, pt[1] * scale_factor) for pt in dest_pts]
+    print(source_pts)
+    print(img.shape)
+    plt.imshow(img)
+    plt.show()
     return img, lines, source_pts, dest_pts
 
 def interlock(img, birds_eye, thresholds, lines):
@@ -103,7 +118,7 @@ def interlock(img, birds_eye, thresholds, lines):
 
     wb = get_wb(img, birds_eye, thresholds)
     plt.imshow(wb)
-    # plt.show()
+    plt.show()
     shape_result = shape(lines[0], lines[1], img.shape[0])
     left_result = convolve(True, lines[0], wb)
     right_result = convolve(False, lines[1], wb)
@@ -116,6 +131,16 @@ def interlock(img, birds_eye, thresholds, lines):
     plt.show()
     return shape_result, left_result, right_result
 
+def crop(img, source_pts, dest_pts, top_crop, x_crop):
+    source_pts = [(pt[0] - x_crop, pt[1] - top_crop) for pt in source_pts]
+    dest_pts = [(pt[0] - x_crop, pt[1] - top_crop) for pt in dest_pts]
+    img = img[top_crop:, x_crop:img.shape[1] - x_crop]
+    print("after crop shape is: ", img.shape)
+    print(source_pts)
+    plt.imshow(img)
+    plt.show()
+    return img, source_pts, dest_pts
+
 def pipeline(img, lines=None, move_lines=False):
     '''
     pipeline for simulating the controller and interlock
@@ -125,13 +150,14 @@ def pipeline(img, lines=None, move_lines=False):
     :return: whether or not the final proposed lane lines pass
     '''
     # RGB_img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-    birds_eye = BirdsEye(SOURCE_PTS, DEST_PTS)
+    img, source_pts, dest_pts = crop(img, SOURCE_PTS, DEST_PTS, img.shape[0]//2, 150)
+    birds_eye = BirdsEye(source_pts, dest_pts)
     if not lines:
         lines = get_lines(img, birds_eye, REG_THRESHOLDS)
     if move_lines:
-        lines = offset(lines, True, 1)
+        offset(lines, True, 1)
 
-    img, lines, source_pts, dest_pts = resize(img, lines, SOURCE_PTS, DEST_PTS, SCALE_FACTOR)
+    img, lines, source_pts, dest_pts = resize(img, lines, source_pts, dest_pts, SCALE_FACTOR)
 
     interlock_birdseye = BirdsEye(source_pts, dest_pts)
     print("Size is: ", get_size(img))

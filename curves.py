@@ -31,7 +31,7 @@ class Curves:
     self.all_pixels_y = np.array(binary.nonzero()[0])
     
   def start(self, binary):
-    hist = np.sum(binary[np.int(self.h / 2):, :], axis = 0)
+    hist = np.sum(binary[:, :], axis = 0)
     mid = np.int(hist.shape[0] / 2)
     current_leftx = np.argmax(hist[:mid])
     current_rightx = np.argmax(hist[mid:]) + mid
